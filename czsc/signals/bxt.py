@@ -143,499 +143,526 @@ def check_five_bi(bis: List[Union[BI, FakeBI]], freq: Freq, di: int = 1) -> Sign
                 < max(bi1.low, bi3.low) < min(bi1.high, bi3.high) < max_high:
             return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='类三卖', v2='五笔')
 
+    return v
+
+
+def check_five_full_bi(bis: List[Union[BI, FakeBI]], freq: Freq, di: int = 1) -> Signal:
+    """识别五笔形态
+
+    :param freq: K线周期，也可以称为级别
+    :param bis: 由远及近的五笔
+    :param di: 最近一笔为倒数第i笔
+    :return:
+    """
+    di_name = f"倒{di}笔"
+
+    v = Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='其他', v2='其他', v3='其他')
+
+    if len(bis) != 5:
+        return v
+
+    bi1, bi2, bi3, bi4, bi5 = bis
+    if not (bi1.direction == bi3.direction == bi5.direction):
+        print(f"1,3,5 的 direction 不一致，无法识别五段形态；{bi1}{bi3}{bi5}")
+        return v
+
+    direction = bi1.direction
+    max_high = max([x.high for x in bis])
+    min_low = min([x.low for x in bis])
+    assert direction in [Direction.Down, Direction.Up], "direction 的取值错误"
 
     if direction == Direction.Down:
         if bi1.high >= bi5.high >= bi3.high and bi1.low <= bi5.low <= bi3.low == min_low:
-            return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='二买', v2='无', v3='X5L2')
+            return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='二买', v2='无', v3='X5L2')
 
         if bi1.high >= bi5.high >= bi3.high and bi1.low >= bi3.low > bi5.low:
             if bi5.power_price < bi1.power_price:
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='一买', v2='笔小井', v3='X5L3')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='一买', v2='笔小井', v3='X5L3')
             else:
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='一买', v2='无', v3='X5L3')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='一买', v2='无', v3='X5L3')
 
         # 五笔二买:要求bi3.low为最高点,bi1.high为最低点
         if bi1.high > bi5.high > bi3.high and min_low == bi3.low:
             if bi5.low > bi3.high:
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='二买', v2='无', v3='X5L1')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='二买', v2='无', v3='X5L1')
             elif bi1.low > bi5.low > bi3.low:
                 if bi5.power_price < bi1.power_price:
-                    return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='二买', v2='笔小井', v3='X5L4')
+                    return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='二买', v2='笔小井', v3='X5L4')
                 else:
-                    return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='二买', v2='无', v3='X5L4')
+                    return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='二买', v2='无', v3='X5L4')
 
         if bi3.high <= bi1.high <= bi5.high and bi1.low >= bi3.low > bi5.low:
             if bi5.power_price < bi1.power_price:
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='无', v2='笔小井', v3='X5L5')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='无', v2='笔小井', v3='X5L5')
             else:
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='无', v2='无', v3='X5L5')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='无', v2='无', v3='X5L5')
 
         if bi5.high >= bi1.high >= bi3.high >= bi5.low >= bi1.low >= bi3.low:
-            return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='二买', v2='无', v3='X5L6')
+            return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='二买', v2='无', v3='X5L6')
 
         if bi3.high < bi1.high < bi5.high:
             if bi5.low > bi1.low > bi3.low and bi5.low > bi3.high:
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='二买', v2='无', v3='X5L7')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='二买', v2='无', v3='X5L7')
             elif bi1.low > bi5.low > bi3.low:
                 if bi5.power_price < bi1.power_price:
-                    return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='二买', v2='笔小井', v3='X5L8')
+                    return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='二买', v2='笔小井', v3='X5L8')
                 else:
-                    return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='二买', v2='无', v3='X5L8')
+                    return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='二买', v2='无', v3='X5L8')
 
         if bi1.high <= bi3.high <= bi5.high and bi1.low >= bi3.low > bi5.low:
             if bi5.power_price < bi1.power_price:
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='无', v2='笔小井', v3='X5L9')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='无', v2='笔小井', v3='X5L9')
             else:
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='无', v2='无', v3='X5L9')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='无', v2='无', v3='X5L9')
 
         if bi1.high <= bi3.high <= bi5.high and bi3.low <= bi1.low <= bi5.low <= max(bi1.high, bi2.high):
-            return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='无', v2='无', v3='X5L10')
+            return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='无', v2='无', v3='X5L10')
 
         if bi1.high < bi3.high < bi5.high:
             if bi5.low > bi1.low > bi3.low and bi5.low > max(bi1.high, bi2.high):
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='无', v2='无', v3='X5L11')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='无', v2='无', v3='X5L11')
             elif bi1.low > bi5.low > bi3.low:
                 if bi5.power_price < bi1.power_price:
-                    return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='无', v2='笔小井', v3='X5L12')
+                    return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='无', v2='笔小井', v3='X5L12')
                 else:
-                    return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='无', v2='无', v3='X5L12')
+                    return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='无', v2='无', v3='X5L12')
 
         if bi1.high >= bi3.high >= bi5.high >= bi1.low >= bi3.low > bi5.low:
             if bi5.power_price < bi3.power_price < bi1.power_price:
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='一买', v2='笔大井', v3='X5L13')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='一买', v2='笔大井', v3='X5L13')
             elif bi3.power_price > bi5.power_price < bi1.power_price:
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='一买', v2='笔小井', v3='X5L13')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='一买', v2='笔小井', v3='X5L13')
             else:
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='一买', v2='无', v3='X5L13')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='一买', v2='无', v3='X5L13')
 
         if bi1.high >= bi3.high >= bi5.high >= bi1.low >= bi5.low >= bi3.low:
             if bi5.power_price < bi1.power_price:
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='二买', v2='笔小井', v3='X5L14')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='二买', v2='笔小井', v3='X5L14')
             else:
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='二买', v2='无', v3='X5L14')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='二买', v2='无', v3='X5L14')
 
         if bi1.high > bi3.high > bi5.high > bi1.low:
             if bi5.low > bi1.low > bi3.low:
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='二买', v2='无', v3='X5L15')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='二买', v2='无', v3='X5L15')
 
         if bi5.high >= bi1.low >= bi3.low > bi5.low and bi3.high >= bi5.high >= bi1.high:
             if bi5.power_price < bi1.power_price:
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='无', v2='笔小井', v3='X5L16')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='无', v2='笔小井', v3='X5L16')
             else:
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='无', v2='无', v3='X5L16')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='无', v2='无', v3='X5L16')
 
         if bi1.low <= bi5.high and bi3.high >= bi5.high >= bi1.high and bi5.low >= bi1.low >= bi3.low:
-            return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='无', v2='无', v3='X5L17')
+            return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='无', v2='无', v3='X5L17')
 
         if bi5.high > bi1.low > bi5.low > bi3.low and bi3.high > bi5.high > bi1.high:
             if bi5.power_price < bi1.power_price:
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='无', v2='笔小井', v3='X5L18')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='无', v2='笔小井', v3='X5L18')
             else:
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='无', v2='无', v3='X5L18')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='无', v2='无', v3='X5L18')
 
-        if bi1.low <= bi5.high <= bi1.high <= bi3.high >= bi3.low > bi5.low:
+        if bi3.high >= bi1.high >= bi5.high < bi3.low <= bi1.low <= bi5.high:
             if bi5.power_price < bi1.power_price:
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='无', v2='笔小井', v3='X5L19')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='无', v2='笔小井', v3='X5L19')
             else:
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='无', v2='无', v3='X5L19')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='无', v2='无', v3='X5L19')
 
         if bi3.high >= bi1.high >= bi5.high >= bi1.low and bi5.low >= bi1.low >= bi3.low:
-            return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='无', v2='无', v3='X5L20')
+            return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='无', v2='无', v3='X5L20')
 
-        if bi3.high > bi1.high > bi5.high > bi1.low > bi5.low > bi3.low:
+        if bi3.high > bi1.high > bi5.high < bi5.low < bi1.low < bi5.high:
             if bi5.power_price < bi1.power_price:
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='无', v2='笔小井', v3='X5L21')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='无', v2='笔小井', v3='X5L21')
             else:
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='无', v2='无', v3='X5L21')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='无', v2='无', v3='X5L21')
 
         if bi1.high > bi3.high > bi5.high and bi5.high < bi1.low:
             if bi1.low > bi3.low > bi5.low \
                     and bi5.power_price < bi3.power_price < bi1.power_price:
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='一买', v2='类大井', v3='X5L22')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='一买', v2='类大井', v3='X5L22')
             else:
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='一买', v2='无', v3='X5L22')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='一买', v2='无', v3='X5L22')
 
         if bi1.high >= bi3.high >= bi5.high and bi5.high <= bi1.low and bi5.low >= bi3.low:
-            return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='二买', v2='无', v3='X5L23')
+            return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='二买', v2='无', v3='X5L23')
 
         if bi1.high < bi3.high and bi1.high < bi3.high:
             if bi1.low > bi5.low > bi3.low:
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='无', v2='无', v3='X5L24')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='无', v2='无', v3='X5L24')
 
         if bi1.high <= bi3.high and bi1.high <= bi3.high and bi1.low >= bi3.low >= bi5.low:
-            return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='无', v2='无', v3='X5L25')
+            return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='无', v2='无', v3='X5L25')
 
         if bi1.high >= bi5.high >= bi3.high >= bi5.low >= bi3.low >= bi1.low:
-            return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='类二买', v2='无', v3='X5L26')
+            return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='类二买', v2='无', v3='X5L26')
 
         if bi1.high > bi5.high > bi3.high:
             if bi3.low > bi5.low > bi1.low:
                 if bi5.power_price < bi1.power_price:
-                    return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='类二买', v2='笔小井', v3='X5L27')
+                    return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='类二买', v2='笔小井', v3='X5L27')
                 else:
-                    return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='类二买', v2='无', v3='X5L27')
+                    return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='类二买', v2='无', v3='X5L27')
 
         if bi1.high > bi5.high > bi3.high:
             if bi5.low > bi3.low > bi1.low:
                 if bi5.low > bi2.high:
-                    return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='三买', v2='无', v3='X5L28')
+                    return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='三买', v2='无', v3='X5L28')
 
         if bi1.high >= bi5.high >= bi3.high and bi3.low >= bi1.low > bi5.low:
             if bi5.power_price < bi1.power_price:
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='一买', v2='笔小井', v3='X5L29')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='一买', v2='笔小井', v3='X5L29')
             else:
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='一买', v2='无', v3='X5L29')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='一买', v2='无', v3='X5L29')
 
         if bi1.high < bi3.high < bi5.high and bi1.high < bi3.low:
             if bi5.low > bi2.high:
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='无', v2='无', v3='X5L30')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='无', v2='无', v3='X5L30')
             elif bi3.low > bi5.low > bi1.low:
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='无', v2='无', v3='X5L32')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='无', v2='无', v3='X5L32')
 
         if bi1.high <= bi3.high <= bi5.high and bi1.high <= bi3.low and bi1.low <= bi3.low <= bi5.low <= bi2.high:
-            return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='无', v2='无', v3='X5L31')
+            return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='无', v2='无', v3='X5L31')
 
         if bi1.high <= bi3.high <= bi5.high and bi1.high <= bi3.low and bi3.low >= bi1.low > bi5.low:
-            return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='无', v2='无', v3='X5L33')
+            return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='无', v2='无', v3='X5L33')
 
         if bi5.high > bi3.high > bi1.high:
             if bi5.low > bi3.low > bi1.low:
                 if bi5.low > bi2.high:
-                    return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='三买', v2='无', v3='X5L36')
+                    return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='三买', v2='无', v3='X5L36')
             elif bi3.low > bi5.low > bi1.low:
                 if bi5.power_price < bi1.power_price:
-                    return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='类二买', v2='笔小井', v3='X5L35')
+                    return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='类二买', v2='笔小井', v3='X5L35')
                 else:
-                    return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='类二买', v2='无', v3='X5L35')
+                    return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='类二买', v2='无', v3='X5L35')
 
         if bi5.high >= bi3.high >= bi1.high and bi3.low >= bi1.low > bi5.low:
             if bi5.power_price < bi1.power_price:
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='无', v2='笔小井', v3='X5L37')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='无', v2='笔小井', v3='X5L37')
             else:
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='无', v2='无', v3='X5L37')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='无', v2='无', v3='X5L37')
 
         if bi5.high >= bi3.high >= bi1.high and bi1.low <= bi3.low <= bi5.low <= bi3.high:
-            return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='类二买', v2='无', v3='X5L34')
+            return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='类二买', v2='无', v3='X5L34')
 
         if bi5.high >= bi1.high >= bi3.high >= bi5.low >= bi3.low >= bi1.low:
-            return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='类二买', v2='无', v3='X5L38')
+            return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='类二买', v2='无', v3='X5L38')
 
         if bi5.high > bi1.high > bi3.high:
             if bi5.low > bi3.low > bi1.low:
                 if bi5.low > bi2.high:
-                    return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='三买', v2='无', v3='X5L40')
+                    return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='三买', v2='无', v3='X5L40')
             elif bi3.low > bi5.low > bi1.low:
                 if bi5.power_price < bi1.power_price:
-                    return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='类二买', v2='笔小井', v3='X5L39')
+                    return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='类二买', v2='笔小井', v3='X5L39')
                 else:
-                    return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='二买', v2='无', v3='X5L39')
+                    return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='二买', v2='无', v3='X5L39')
 
         if bi5.high >= bi1.high >= bi3.high and bi3.low >= bi1.low > bi5.low:
             if bi5.power_price < bi1.power_price:
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='无', v2='笔小井', v3='X5L41')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='无', v2='笔小井', v3='X5L41')
             else:
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='无', v2='无', v3='X5L41')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='无', v2='无', v3='X5L41')
 
         if bi1.high >= bi3.high >= bi5.high and bi5.low >= bi3.low >= bi1.low:
-            return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='类二买', v2='无', v3='X5L42')
+            return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='类二买', v2='无', v3='X5L42')
 
         if bi1.high > bi3.high > bi5.high and bi3.low > bi5.low > bi1.low:
             if bi5.power_price < bi1.power_price:
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='类二买', v2='笔小井', v3='X5L43')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='类二买', v2='笔小井', v3='X5L43')
             else:
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='类二买', v2='无', v3='X5L43')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='类二买', v2='无', v3='X5L43')
 
         if bi1.high >= bi3.high >= bi5.high and bi3.low >= bi1.low > bi5.low:
             if bi5.power_price < bi1.power_price:
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='一买', v2='笔小井', v3='X5L44')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='一买', v2='笔小井', v3='X5L44')
             else:
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='一买', v2='无', v3='X5L44')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='一买', v2='无', v3='X5L44')
 
         if bi2.high > bi1.high > bi3.low > bi5.low > bi1.low and bi1.high < bi5.high < bi3.high:
             if bi5.power_price < bi1.power_price:
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='类二买', v2='笔小井', v3='X5L45')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='类二买', v2='笔小井', v3='X5L45')
             else:
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='类二买', v2='无', v3='X5L45')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='类二买', v2='无', v3='X5L45')
 
         if bi2.high >= bi1.high >= bi3.low >= bi1.low > bi5.low and bi1.high <= bi5.high <= bi3.high:
             if bi5.power_price < bi1.power_price:
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='无', v2='笔小井', v3='X5L47')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='无', v2='笔小井', v3='X5L47')
             else:
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='无', v2='无', v3='X5L47')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='无', v2='无', v3='X5L47')
 
         if bi2.high >= bi1.high >= bi3.low and bi1.high <= bi5.high <= bi3.high and bi5.low >= bi3.low >= bi1.low:
-            return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='类二买', v2='无', v3='X5L46')
+            return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='类二买', v2='无', v3='X5L46')
 
         if bi1.high < bi5.high < bi3.high and bi1.high < bi3.low and bi3.low > bi5.low > bi1.low:
-            return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='无', v2='无', v3='X5L48')
+            return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='无', v2='无', v3='X5L48')
 
         if bi1.high <= bi5.high <= bi3.high and bi1.high <= bi3.low and bi3.low >= bi1.low > bi5.low:
-            return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='无', v2='无', v3='X5L50')
+            return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='无', v2='无', v3='X5L50')
 
         if bi1.high <= bi5.high <= bi3.high and bi1.high <= bi3.low and bi5.low >= bi3.low >= bi1.low:
-            return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='无', v2='无', v3='X5L49')
+            return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='无', v2='无', v3='X5L49')
 
         if bi5.high < bi1.high < bi3.high and bi3.low > bi5.low > bi1.low:
             if bi5.power_price < bi1.power_price:
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='类二买', v2='笔小井', v3='X5L51')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='类二买', v2='笔小井', v3='X5L51')
             else:
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='类二买', v2='无', v3='X5L51')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='类二买', v2='无', v3='X5L51')
 
         if bi5.high <= bi1.high <= bi3.high and bi3.low >= bi1.low > bi5.low:
             if bi5.power_price < bi1.power_price:
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='无', v2='笔小井', v3='X5L53')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='无', v2='笔小井', v3='X5L53')
             else:
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='无', v2='无', v3='X5L53')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='无', v2='无', v3='X5L53')
 
         if bi5.high <= bi1.high <= bi3.high and bi5.low >= bi3.low >= bi1.low:
-            return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='类二买', v2='无', v3='X5L52')
+            return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='类二买', v2='无', v3='X5L52')
 
     if direction == Direction.Up:
         # 五笔一卖:要求bi1.low为最低点,bi5.high为最高点,中间三笔任意组合.
         if bi1.low <= bi5.low <= bi3.low <= bi5.high <= bi1.high and max_high == bi3.high:
-            return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='二卖', v2='无', v3='X5S2')
+            return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='二卖', v2='无', v3='X5S2')
 
         if bi1.low <= bi5.low <= bi3.low and bi1.high <= bi3.high < bi5.high:
             if bi5.power_price < bi1.power_price:
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='一卖', v2='笔小井', v3='X5S3')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='一卖', v2='笔小井', v3='X5S3')
             else:
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='一卖', v2='无', v3='X5S3')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='一卖', v2='无', v3='X5S3')
 
         # 五笔二卖:要求bi3.high为最高点,bi1.low为最低点
         if bi1.low < bi5.low < bi3.low and max_high == bi3.high:
             if bi5.high < bi3.low:
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='二卖', v2='无', v3='X5S1')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='二卖', v2='无', v3='X5S1')
             elif bi1.high < bi5.high < bi3.high:
                 if bi5.power_price < bi1.power_price:
-                    return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='二卖', v2='笔小井', v3='X5S4')
+                    return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='二卖', v2='笔小井', v3='X5S4')
                 else:
-                    return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='二卖', v2='无', v3='X5S4')
+                    return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='二卖', v2='无', v3='X5S4')
 
         if bi3.low >= bi1.low >= bi5.low and bi1.high <= bi3.high < bi5.high:
             if bi5.power_price < bi1.power_price:
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='无', v2='笔小井', v3='X5S5')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='无', v2='笔小井', v3='X5S5')
             else:
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='无', v2='无', v3='X5S5')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='无', v2='无', v3='X5S5')
 
         if bi5.low <= bi1.low <= bi3.low <= bi5.high <= bi1.high <= bi3.high:
-            return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='二卖', v2='无', v3='X5S6')
+            return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='二卖', v2='无', v3='X5S6')
 
         if bi3.low > bi1.low > bi5.low:
             if bi5.high < bi1.high < bi3.high and bi5.high < bi3.low:
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='二卖', v2='无', v3='X5S7')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='二卖', v2='无', v3='X5S7')
             elif bi1.high < bi5.high < bi3.high:
                 if bi5.power_price < bi1.power_price:
-                    return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='二卖', v2='笔小井', v3='X5S8')
+                    return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='二卖', v2='笔小井', v3='X5S8')
                 else:
-                    return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='二卖', v2='无', v3='X5S8')
+                    return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='二卖', v2='无', v3='X5S8')
 
         if bi1.low >= bi3.low >= bi5.low and bi1.high <= bi3.high < bi5.high:
             if bi5.power_price < bi1.power_price:
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='无', v2='笔小井', v3='X5S9')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='无', v2='笔小井', v3='X5S9')
             else:
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='无', v2='无', v3='X5S9')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='无', v2='无', v3='X5S9')
 
         if bi1.low >= bi3.low >= bi5.low and bi3.high >= bi1.high >= bi5.high >= max(bi1.low, bi2.low):
-            return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='无', v2='无', v3='X5S10')
+            return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='无', v2='无', v3='X5S10')
 
         if bi1.low > bi3.low > bi5.low:
             if bi5.high < bi1.high < bi3.high and bi5.high < max(bi1.low, bi2.low):
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='无', v2='无', v3='X5S11')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='无', v2='无', v3='X5S11')
             elif bi1.high < bi5.high < bi3.high:
                 if bi5.power_price < bi1.power_price:
-                    return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='无', v2='笔小井', v3='X5S12')
+                    return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='无', v2='笔小井', v3='X5S12')
                 else:
-                    return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='无', v2='无', v3='X5S12')
+                    return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='无', v2='无', v3='X5S12')
 
-        if bi1.high >= bi5.low >= bi3.low >= bi1.low <= bi3.high < bi5.high:
+        if bi1.low <= bi3.low <= bi5.low > bi3.high >= bi1.high >= bi5.low:
             if bi5.power_price < bi3.power_price < bi1.power_price:
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='一卖', v2='笔大井', v3='X5S13')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='一卖', v2='笔大井', v3='X5S13')
             elif bi3.power_price < bi5.power_price < bi1.power_price:
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='一卖', v2='笔小井', v3='X5S13')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='一卖', v2='笔小井', v3='X5S13')
             else:
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='一卖', v2='无', v3='X5S13')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='一卖', v2='无', v3='X5S13')
 
-        if bi1.high >= bi5.low >= bi3.low >= bi1.low <= bi5.high <= bi3.high:
+        if bi1.low <= bi3.low <= bi5.low >= bi5.high >= bi1.high >= bi5.low:
             if bi5.power_price < bi1.power_price:
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='二卖', v2='笔小井', v3='X5S14')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='二卖', v2='笔小井', v3='X5S14')
             else:
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='二卖', v2='无', v3='X5S14')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='二卖', v2='无', v3='X5S14')
 
         if bi1.low < bi3.low < bi5.low < bi1.high:
             if bi5.high < bi1.high < bi3.high:
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='二卖', v2='无', v3='X5S15')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='二卖', v2='无', v3='X5S15')
 
         if bi5.low <= bi1.high <= bi3.high < bi5.high and bi3.low <= bi5.low <= bi1.low:
             if bi5.power_price < bi1.power_price:
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='无', v2='笔小井', v3='X5S16')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='无', v2='笔小井', v3='X5S16')
             else:
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='无', v2='无', v3='X5S16')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='无', v2='无', v3='X5S16')
 
         if bi1.high >= bi5.low and bi3.low <= bi5.low <= bi1.low and bi5.high <= bi1.high <= bi3.high:
-            return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='无', v2='无', v3='X5S17')
+            return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='无', v2='无', v3='X5S17')
 
         if bi5.low < bi1.high < bi5.high < bi3.high and bi3.low < bi5.low < bi1.low:
             if bi5.power_price < bi1.power_price:
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='无', v2='笔小井', v3='X5S18')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='无', v2='笔小井', v3='X5S18')
             else:
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='无', v2='无', v3='X5S18')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='无', v2='无', v3='X5S18')
 
-        if bi1.high >= bi5.low >= bi1.low >= bi3.low <= bi3.high < bi5.high:
+        if bi3.low <= bi1.low <= bi5.low > bi3.high >= bi1.high >= bi5.low:
             if bi5.power_price < bi1.power_price:
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='无', v2='笔小井', v3='X5S19')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='无', v2='笔小井', v3='X5S19')
             else:
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='无', v2='无', v3='X5S19')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='无', v2='无', v3='X5S19')
 
         if bi3.low <= bi1.low <= bi5.low <= bi1.high and bi5.high <= bi1.high <= bi3.high:
-            return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='无', v2='无', v3='X5S20')
+            return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='无', v2='无', v3='X5S20')
 
-        if bi1.high > bi5.low > bi1.low > bi3.low < bi5.high < bi3.high:
+        if bi3.low < bi1.low < bi5.low > bi5.high > bi1.high > bi5.low:
             if bi5.power_price < bi1.power_price:
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='无', v2='笔小井', v3='X5S21')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='无', v2='笔小井', v3='X5S21')
             else:
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='无', v2='无', v3='X5S21')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='无', v2='无', v3='X5S21')
 
         if bi1.low < bi3.low < bi5.low and bi1.high <= bi3.high <= bi5.high:
             if bi1.high < bi3.high < bi5.high \
                     and bi5.power_price < bi3.power_price < bi1.power_price:
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='一卖', v2='类大井', v3='X5S22')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='一卖', v2='类大井', v3='X5S22')
             else:
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='一卖', v2='无', v3='X5S22')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='一卖', v2='无', v3='X5S22')
 
         if bi1.low <= bi3.low <= bi5.low and bi5.low >= bi1.high and bi5.high <= bi3.high:
-            return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='二卖', v2='无', v3='X5S23')
+            return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='二卖', v2='无', v3='X5S23')
 
         if bi1.low > bi3.low and bi1.low > bi3.low:
             if bi1.high < bi5.high < bi3.high:
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='无', v2='无', v3='X5S24')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='无', v2='无', v3='X5S24')
 
-        if bi1.low >= bi3.low  and bi1.high <= bi3.high <= bi5.high:
-            return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='无', v2='无', v3='X5S25')
+        if bi1.low >= bi3.low and bi1.high <= bi3.high <= bi5.high:
+            return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='无', v2='无', v3='X5S25')
 
         if bi1.low <= bi5.low <= bi3.low <= bi5.high <= bi3.high <= bi1.high:
-            return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='类二卖1', v2='无', v3='X5S26')
+            return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='类二卖1', v2='无', v3='X5S26')
 
         if bi1.low < bi5.low < bi3.low:
             if bi3.high < bi5.high < bi1.high:
                 if bi5.power_price < bi1.power_price:
-                    return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='类二卖', v2='笔小井', v3='X5S27')
+                    return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='类二卖', v2='笔小井', v3='X5S27')
                 else:
-                    return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='类二卖', v2='无', v3='X5S27')
+                    return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='类二卖', v2='无', v3='X5S27')
 
         if bi1.low < bi5.low < bi3.low:
             if bi5.high < bi3.high < bi1.high:
                 if bi5.high < bi2.low:
-                    return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='三卖', v2='无', v3='X5S28')
+                    return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='三卖', v2='无', v3='X5S28')
 
         if bi1.low <= bi5.low <= bi3.low and bi3.high <= bi1.high < bi5.high:
             if bi5.power_price < bi1.power_price:
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='一卖', v2='笔小井', v3='X5S29')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='一卖', v2='笔小井', v3='X5S29')
             else:
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='一卖', v2='无', v3='X5S29')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='一卖', v2='无', v3='X5S29')
 
         if bi1.low > bi3.low > bi5.low and bi1.low > bi3.high:
             if bi5.high < bi2.low:
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='无', v2='无', v3='X5S30')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='无', v2='无', v3='X5S30')
             elif bi3.high < bi5.high < bi1.high:
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='无', v2='无', v3='X5S32')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='无', v2='无', v3='X5S32')
 
         if bi1.low >= bi3.low >= bi5.low and bi1.low >= bi3.high and bi1.high >= bi3.high >= bi5.high >= bi2.low:
-            return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='无', v2='无', v3='X5S31')
+            return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='无', v2='无', v3='X5S31')
 
         if bi1.low >= bi3.low >= bi5.low and bi1.low >= bi3.high and bi3.high <= bi1.high < bi5.high:
-            return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='无', v2='无', v3='X5S33')
+            return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='无', v2='无', v3='X5S33')
 
         if bi5.low < bi3.low < bi1.low:
             if bi5.high < bi3.high < bi1.high:
                 if bi5.high < bi2.low:
-                    return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='三卖', v2='无', v3='X5S36')
+                    return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='三卖', v2='无', v3='X5S36')
             elif bi3.high < bi5.high < bi1.high:
                 if bi5.power_price < bi1.power_price:
-                    return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='类二卖', v2='笔小井', v3='X5S35')
+                    return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='类二卖', v2='笔小井', v3='X5S35')
                 else:
-                    return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='类二卖', v2='无', v3='X5S35')
+                    return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='类二卖', v2='无', v3='X5S35')
 
         if bi5.low <= bi3.low <= bi1.low and bi3.high <= bi1.high < bi5.high:
             if bi5.power_price < bi1.power_price:
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='无', v2='笔小井', v3='X5S37')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='无', v2='笔小井', v3='X5S37')
             else:
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='无', v2='无', v3='X5S37')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='无', v2='无', v3='X5S37')
 
         if bi5.low <= bi3.low <= bi1.low and bi1.high >= bi3.high >= bi5.high >= bi3.low:
-            return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='类二卖1', v2='无', v3='X5S34')
+            return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='类二卖1', v2='无', v3='X5S34')
 
         if bi5.low <= bi1.low <= bi3.low <= bi5.high <= bi3.high <= bi1.high:
-            return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='类二卖1', v2='无', v3='X5S38')
+            return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='类二卖1', v2='无', v3='X5S38')
 
         if bi5.low < bi1.low < bi3.low:
             if bi5.high < bi3.high < bi1.high:
                 if bi5.high < bi2.low:
-                    return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='三卖', v2='无', v3='X5S40')
+                    return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='三卖', v2='无', v3='X5S40')
             elif bi3.high < bi5.high < bi1.high:
                 if bi5.power_price < bi1.power_price:
-                    return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='类二卖', v2='笔小井', v3='X5S39')
+                    return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='类二卖', v2='笔小井', v3='X5S39')
                 else:
-                    return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='类二卖', v2='无', v3='X5S39')
+                    return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='类二卖', v2='无', v3='X5S39')
 
         if bi5.low <= bi1.low <= bi3.low and bi3.high <= bi1.high < bi5.high:
             if bi5.power_price < bi1.power_price:
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='无', v2='笔小井', v3='X5S41')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='无', v2='笔小井', v3='X5S41')
             else:
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='无', v2='无', v3='X5S41')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='无', v2='无', v3='X5S41')
 
         if bi1.low <= bi3.low <= bi5.low and bi5.high <= bi3.high <= bi1.high:
-            return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='类二卖1', v2='无', v3='X5S42')
+            return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='类二卖1', v2='无', v3='X5S42')
 
         if bi1.low < bi3.low < bi5.low and bi3.high < bi5.high < bi1.high:
             if bi5.power_price < bi1.power_price:
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='类二卖', v2='笔小井', v3='X5S43')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='类二卖', v2='笔小井', v3='X5S43')
             else:
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='类二卖', v2='无', v3='X5S43')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='类二卖', v2='无', v3='X5S43')
 
         if bi1.low <= bi3.low <= bi5.low and bi3.high <= bi1.high < bi5.high:
             if bi5.power_price < bi1.power_price:
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='一卖', v2='笔小井', v3='X5S44')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='一卖', v2='笔小井', v3='X5S44')
             else:
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='一卖', v2='无', v3='X5S44')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='一卖', v2='无', v3='X5S44')
 
         if bi2.low < bi1.low < bi3.high < bi5.high < bi1.high and bi1.low > bi5.low > bi3.low:
             if bi5.power_price < bi1.power_price:
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='类二卖', v2='笔小井', v3='X5S45')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='类二卖', v2='笔小井', v3='X5S45')
             else:
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='类二卖', v2='无', v3='X5S45')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='类二卖', v2='无', v3='X5S45')
 
         if bi2.low <= bi1.low <= bi3.high <= bi1.high < bi5.high and bi1.low >= bi5.low >= bi3.low:
             if bi5.power_price < bi1.power_price:
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='无', v2='笔小井', v3='X5S47')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='无', v2='笔小井', v3='X5S47')
             else:
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='无', v2='无', v3='X5S47')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='无', v2='无', v3='X5S47')
 
         if bi2.low <= bi1.low <= bi3.high and bi1.low >= bi5.low >= bi3.low and bi5.high <= bi3.high <= bi1.high:
-            return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='类二卖1', v2='无', v3='X5S46')
+            return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='类二卖1', v2='无', v3='X5S46')
 
         if bi1.low > bi5.low > bi3.low and bi1.low > bi3.high and bi3.high < bi5.high < bi1.high:
-            return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='无', v2='无', v3='X5S48')
+            return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='无', v2='无', v3='X5S48')
 
         if bi1.low >= bi5.low >= bi3.low and bi1.low >= bi3.high and bi3.high <= bi1.high < bi5.high:
-            return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='无', v2='无', v3='X5S50')
+            return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='无', v2='无', v3='X5S50')
 
         if bi1.low >= bi5.low >= bi3.low and bi1.low >= bi3.high and bi5.high <= bi3.high <= bi1.high:
-            return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='无', v2='无', v3='X5S49')
+            return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='无', v2='无', v3='X5S49')
 
         if bi5.low > bi1.low > bi3.low and bi3.high < bi5.high < bi1.high:
             if bi5.power_price < bi1.power_price:
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='类二卖', v2='笔小井', v3='X5S51')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='类二卖', v2='笔小井', v3='X5S51')
             else:
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='类二卖', v2='无', v3='X5S51')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='类二卖', v2='无', v3='X5S51')
 
         if bi5.low >= bi1.low >= bi3.low and bi3.high <= bi1.high < bi5.high:
             if bi5.power_price < bi1.power_price:
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='无', v2='笔小井', v3='X5S53')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='无', v2='笔小井', v3='X5S53')
             else:
-                return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='无', v2='无', v3='X5S53')
+                return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='无', v2='无', v3='X5S53')
 
         if bi5.low >= bi1.low >= bi3.low and bi5.high <= bi3.high <= bi1.high:
-            return Signal(k1=freq.value, k2=di_name, k3='基础形态', v1='类二卖1', v2='无', v3='X5S52')
+            return Signal(k1=freq.value, k2=di_name, k3='五笔形态', v1='类二卖1', v2='无', v3='X5S52')
 
     return v
 
@@ -1091,6 +1118,39 @@ def get_s_base_xt(c: analyze.CZSC, di: int = 1) -> OrderedDict:
 
 
 @deprecated(version='1.0.0', reason="所有笔、分型相关信号迁移至 cxt 下")
+def get_s_five_bi_xt(c: analyze.CZSC, di: int = 1) -> OrderedDict:
+    """倒数第i笔的基础形态信号
+
+    完全分类：
+
+
+    :param c: CZSC 对象
+    :param di: 最近一笔为倒数第i笔
+    :return: 信号字典
+    """
+    assert di >= 1
+
+    bis = c.finished_bis
+    freq: Freq = c.freq
+    s = OrderedDict()
+    v = Signal(k1=str(freq.value), k2=f"倒{di}笔", k3="五笔形态", v1="其他", v2='其他', v3='其他')
+    s[v.key] = v.value
+
+    if not bis:
+        return s
+
+    if di == 1:
+        five_bi = bis[-5:]
+    else:
+        five_bi = bis[-5 - di + 1: -di + 1]
+
+    for v in [check_five_full_bi(five_bi, freq, di)]:
+        if "其他" not in v.value:
+            s[v.key] = v.value
+    return s
+
+
+@deprecated(version='1.0.0', reason="所有笔、分型相关信号迁移至 cxt 下")
 def get_s_like_bs(c: analyze.CZSC, di: int = 1) -> OrderedDict:
     """倒数第i笔的类买卖点信号
 
@@ -1260,4 +1320,3 @@ def get_s_di_bi(c: analyze.CZSC, di: int = 1) -> OrderedDict:
     if "其他" not in v.value:
         s[v.key] = v.value
     return s
-
