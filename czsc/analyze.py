@@ -104,7 +104,7 @@ def check_fxs(bars: List[NewBar]) -> List[FX]:
     return fxs
 
 
-def check_bi(bars: List[NewBar], Macddata, bars_raw: List[RawBar], benchmark: float = None):
+def check_bi(bars: List[NewBar], Macddata, bars_raw: List[RawBar] = None, benchmark: float = None):
     """输入一串无包含关系K线，查找其中的一笔
 
     :param bars: 无包含关系K线列表
@@ -165,8 +165,7 @@ def check_bi(bars: List[NewBar], Macddata, bars_raw: List[RawBar], benchmark: fl
     else:
         power_enough = False
 
-    if (dif_a < 0 < dif_b and len(bars_a) >= 5) or (dif_a > 0 > dif_b and (len(bars_a) >= 5)) and not ab_include and (
-            len(bars_a) >= min_bi_len or power_enough):
+    if (dif_a < 0 < dif_b and len(bars_a) >= 5) or (dif_a > 0 > dif_b and (len(bars_a) >= 5)):
         macd_up = [x.macd for x in fd_macd if x.macd > 0]
         macd_down = [x.macd for x in fd_macd if x.macd < 0]
         if direction == Direction.Up:
@@ -374,7 +373,12 @@ class CZSC:
         self.signals = None
         # cache 是信号计算过程的缓存容器，需要信号计算函数自行维护
         self.cache = OrderedDict()
-
+        if bars != None:
+            self.symbol = bars[0].symbol
+            self.freq = bars[0].freq
+            self.start_date = bars[0].dt
+            self.end_date = bars[-1].dt
+            self.latest_price = bars[-1].close
         for bar in bars:
             self.update(bar)
 
@@ -400,6 +404,7 @@ class CZSC:
                         or (fx_a.mark == Mark.G and fx.high >= fx_a.high):
                     fx_a = fx
             bars_ubi = [x for x in bars_ubi if x.dt >= fx_a.elements[0].dt]
+            bars_raw = [x for x in self.bars_raw if bars_ubi[-1].dt >= x.dt >= bars_ubi[0].dt]
 
             bi, bars_ubi_ = check_bi(bars=bars_ubi, Macddata=self.macd, bars_raw=bars_raw)
             if isinstance(bi, BI):
@@ -415,18 +420,21 @@ class CZSC:
         else:
             benchmark = None
 
-        bi, bars_ubi_ = check_bi(bars=bars_ubi, Macddata=self.macd, bars_raw=bars_raw)
+        last_bi = self.bi_list[-1]
+        if (last_bi.direction == Direction.Up and bars_ubi[-1].high > last_bi.high) \
+                or (last_bi.direction == Direction.Down and bars_ubi[-1].low < last_bi.low):
+            bars_ubi_a = last_bi.bars[:-1] + [x for x in bars_ubi if x.dt >= last_bi.bars[-1].dt]
+            self.bi_list.pop(-1)
+        else:
+            bars_ubi_a = bars_ubi
+
+        if self.verbose and len(bars_ubi_a) > 100:
+            print(f"{self.symbol} - {self.freq} - {bars_ubi_a[-1].dt} 未完成笔延伸超长，延伸数量: {len(bars_ubi_a)}")
+        bars_raw_a = [x for x in self.bars_raw if bars_ubi_a[-1].dt >= x.dt >= bars_ubi_a[0].dt]
+        bi, bars_ubi_ = check_bi(bars=bars_ubi_a, Macddata=self.macd, bars_raw=bars_raw_a, benchmark=benchmark)
         self.bars_ubi = bars_ubi_
         if isinstance(bi, BI):
             self.bi_list.append(bi)
-
-        # 后处理：如果当前笔被破坏，将当前笔的bars与bars_ubi进行合并，并丢弃
-        last_bi = self.bi_list[-1]
-        bars_ubi = self.bars_ubi
-        if (last_bi.direction == Direction.Up and bars_ubi[-1].high > last_bi.high) \
-                or (last_bi.direction == Direction.Down and bars_ubi[-1].low < last_bi.low):
-            self.bars_ubi = last_bi.bars[:-1] + [x for x in bars_ubi if x.dt >= last_bi.bars[-1].dt]
-            self.bi_list.pop(-1)
 
     def update(self, bar: RawBar):
         """更新分析结果
@@ -434,6 +442,8 @@ class CZSC:
         :param bar: 单根K线对象
         """
         # 更新K线序列
+        self.symbol = bar.symbol
+        self.freq = bar.freq
         if not self.bars_raw or bar.dt != self.bars_raw[-1].dt:
             self.bars_raw.append(bar)
             last_bars = [bar]
@@ -488,6 +498,10 @@ class CZSC:
         else:
             self.signals = OrderedDict()
 
+        self.end_date = self.bars_raw[-1].dt
+        self.latest_price = self.bars_raw[-1].close
+        self.symbol = bar.symbol
+
     def _update_ta(self):
         """更新辅助技术指标
                """
@@ -505,8 +519,8 @@ class CZSC:
             ma_ = {'ma%i' % p: round(sum([x.close for x in self.bars_raw[-p:]]) / p, 1)
                    for p in self.ma_params}
             ma_.update({"dt": self.bars_raw[-1].dt})
-
-            if self.bars_raw[-2].dt == self.ma[-1]['dt']:
+            if len(self.bars_raw) > 1 and self.bars_raw[-2].dt == self.ma[-1]['dt']:
+            # if self.bars_raw[-2].dt == self.ma[-1]['dt']:
                 self.ma.append(ma_)
             else:
                 self.ma[-1] = ma_
@@ -533,8 +547,8 @@ class CZSC:
             atr = ta.ATR(high=high_, low=low_, close=close_, timeperiod=self.atr_length)
             macd_ = Macd(dt=self.bars_raw[-1].dt, dif=round(dif[-1], 2), dea=round(dea[-1], 2),
                          macd=round(macd[-1], 2), atr=round(atr[-1], 2))
-
-            if self.bars_raw[-2].dt == self.macd[-1].dt:
+            if len(self.bars_raw) > 1 and self.bars_raw[-2].dt == self.macd[-1].dt:
+            # if self.bars_raw[-2].dt == self.macd[-1].dt:
                 self.macd.append(macd_)
             else:
                 self.macd[-1] = macd_
