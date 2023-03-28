@@ -20,6 +20,7 @@ import pandas as pd
 from czsc.utils.ta import MACD
 import talib as ta
 from czsc.objects import Macd
+
 logger.disable('czsc.analyze')
 
 
@@ -103,7 +104,7 @@ def check_fxs(bars: List[NewBar]) -> List[FX]:
     return fxs
 
 
-def check_bi(bars: List[NewBar], Macddata, benchmark: float = None):
+def check_bi(bars: List[NewBar], Macddata, bars_raw: List[RawBar], benchmark: float = None):
     """输入一串无包含关系K线，查找其中的一笔
 
     :param bars: 无包含关系K线列表
@@ -147,6 +148,13 @@ def check_bi(bars: List[NewBar], Macddata, benchmark: float = None):
     bars_a = [x for x in bars if fx_a.elements[0].dt <= x.dt <= fx_b.elements[2].dt]
     bars_b = [x for x in bars if x.dt >= fx_b.elements[0].dt]
 
+    bars_raw_a = [x for x in bars_raw if fx_a.elements[1].dt <= x.dt <= fx_b.elements[1].dt]
+
+    bar_low = min([x.low for x in bars_raw])
+    bar_high = max([x.high for x in bars_raw])
+    fd_macd = [x for x in Macddata if fx_a.dt <= x.dt <= fx_b.dt]
+    dif_a = fd_macd[0].dif
+    dif_b = fd_macd[-1].dif
     # 判断fx_a和fx_b价格区间是否存在包含关系
     ab_include = (fx_a.high > fx_b.high and fx_a.low < fx_b.low) \
                  or (fx_a.high < fx_b.high and fx_a.low > fx_b.low)
@@ -157,10 +165,29 @@ def check_bi(bars: List[NewBar], Macddata, benchmark: float = None):
     else:
         power_enough = False
 
-    # 成笔的条件：1）顶底分型之间没有包含关系；2）笔长度大于等于min_bi_len 或 当前笔的涨跌幅已经够大
-    if (not ab_include) and (len(bars_a) >= min_bi_len or power_enough):
+    if (dif_a < 0 < dif_b and len(bars_a) >= 5) or (dif_a > 0 > dif_b and (len(bars_a) >= 5)) and not ab_include and (
+            len(bars_a) >= min_bi_len or power_enough):
+        macd_up = [x.macd for x in fd_macd if x.macd > 0]
+        macd_down = [x.macd for x in fd_macd if x.macd < 0]
+        if direction == Direction.Up:
+            macd_length = 0 if len(macd_up) == 0 else abs(max(macd_up))
+            max_dea = abs(max([x.dea for x in fd_macd]))
+            max_dif = abs(max([x.dif for x in fd_macd]))
+
+        else:
+            macd_length = 0 if len(macd_down) == 0 else abs(min(macd_down))
+            max_dea = abs(min([x.dea for x in fd_macd]))
+            max_dif = abs(min([x.dif for x in fd_macd]))
+
+        # 成笔的条件：1）顶底分型之间没有包含关系；2）笔长度大于等于min_bi_len 或 当前笔的涨跌幅已经够大
+        # if (not ab_include) and (len(bars_a) >= min_bi_len or power_enough):
+        #
+        #     bi = BI(symbol=fx_a.symbol, fx_a=fx_a, fx_b=fx_b, fxs=fxs_, direction=direction, bars=bars_a)
         fxs_ = [x for x in fxs if fx_a.elements[0].dt <= x.dt <= fx_b.elements[2].dt]
-        bi = BI(symbol=fx_a.symbol, fx_a=fx_a, fx_b=fx_b, fxs=fxs_, direction=direction, bars=bars_a)
+        bi = BI(symbol=fx_a.symbol, fx_a=fx_a, fx_b=fx_b, fxs=fxs_,
+                direction=direction, bars=bars_a, macd_length=macd_length,
+                max_dea=max_dea, max_dif=max_dif, bar_high=bar_high, bar_low=bar_low
+                )
 
         low_ubi = min([x.low for x in bars_b])
         high_ubi = max([x.high for x in bars_b])
@@ -374,7 +401,7 @@ class CZSC:
                     fx_a = fx
             bars_ubi = [x for x in bars_ubi if x.dt >= fx_a.elements[0].dt]
 
-            bi, bars_ubi_ = check_bi(bars=bars_ubi, Macddata=self.macd)
+            bi, bars_ubi_ = check_bi(bars=bars_ubi, Macddata=self.macd, bars_raw=bars_raw)
             if isinstance(bi, BI):
                 self.bi_list.append(bi)
             self.bars_ubi = bars_ubi_
@@ -388,7 +415,7 @@ class CZSC:
         else:
             benchmark = None
 
-        bi, bars_ubi_ = check_bi(bars=bars_ubi, Macddata=self.macd)
+        bi, bars_ubi_ = check_bi(bars=bars_ubi, Macddata=self.macd, bars_raw=bars_raw)
         self.bars_ubi = bars_ubi_
         if isinstance(bi, BI):
             self.bi_list.append(bi)

@@ -194,6 +194,12 @@ class BI:
     fxs: List = None  # 笔内部的分型列表
     direction: Direction = None
     bars: List[NewBar] = None
+    macd_length: float = 0  # macd长度
+    max_dif: float = 0  # 笔中dif最大值
+    max_dea: float = 0  # 笔中dea最大值
+    bar_low: float = 0  # 笔中k线最低价
+    bar_high: float = 0  # 笔中k线最低价
+
     cache: dict = None  # cache 用户缓存
 
     def __post_init__(self):
