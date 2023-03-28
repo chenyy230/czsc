@@ -25,6 +25,14 @@ class Tick:
     price: float = 0
     vol: float = 0
 
+@dataclass
+class Macd:
+    """macd"""
+    dt: datetime = None
+    dif: float = None
+    dea: float = None
+    macd: float = None
+    atr: float = None           # ATR值
 
 @dataclass
 class RawBar:

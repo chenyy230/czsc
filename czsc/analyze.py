@@ -15,7 +15,11 @@ from czsc.enum import Mark, Direction
 from czsc.objects import BI, FX, RawBar, NewBar
 from czsc.utils.echarts_plot import kline_pro
 from czsc import envs
-
+from datetime import datetime
+import pandas as pd
+from czsc.utils.ta import MACD
+import talib as ta
+from czsc.objects import Macd
 logger.disable('czsc.analyze')
 
 
@@ -79,8 +83,8 @@ def check_fx(k1: NewBar, k2: NewBar, k3: NewBar):
 def check_fxs(bars: List[NewBar]) -> List[FX]:
     """输入一串无包含关系K线，查找其中所有分型"""
     fxs = []
-    for i in range(1, len(bars)-1):
-        fx: FX = check_fx(bars[i-1], bars[i], bars[i+1])
+    for i in range(1, len(bars) - 1):
+        fx: FX = check_fx(bars[i - 1], bars[i], bars[i + 1])
         if isinstance(fx, FX):
             # 这里可能隐含Bug，默认情况下，fxs本身是顶底交替的，但是对于一些特殊情况下不是这样，这是不对的。
             # 临时处理方案，强制要求fxs序列顶底交替
@@ -99,7 +103,7 @@ def check_fxs(bars: List[NewBar]) -> List[FX]:
     return fxs
 
 
-def check_bi(bars: List[NewBar], benchmark: float = None):
+def check_bi(bars: List[NewBar], Macddata, benchmark: float = None):
     """输入一串无包含关系K线，查找其中的一笔
 
     :param bars: 无包含关系K线列表
@@ -169,11 +173,156 @@ def check_bi(bars: List[NewBar], benchmark: float = None):
         return None, bars
 
 
+def get_sub_bi(c1, c0) -> int:
+    """获取子区间（这是进行多级别联立分析的关键步骤）
+    """
+    start_dt = c1.bi_list[-1].sdt
+    end_dt = c1.bi_list[-1].edt
+    sub = []
+    right_bi = []
+    bis = c0.bi_list[-20:]
+    # right_kn = [x for x in c0.bi_list if start_dt <= x.fx_a.dt <= end_dt]
+    for bi in bis:
+        if bi.fx_b.dt > start_dt > bi.fx_a.dt:
+            sub.append(bi)
+        elif start_dt <= bi.fx_a.dt < bi.fx_b.dt <= end_dt:
+            sub.append(bi)
+        elif bi.fx_a.dt < end_dt < bi.fx_b.dt:
+            sub.append(bi)
+        elif end_dt <= bi.fx_a.dt < bi.fx_b.dt:
+            right_bi.append(bi)
+        else:
+            continue
+
+    if len(sub) > 0 and sub[0].direction != c1.bi_list[-1].direction:
+        sub = sub[1:]
+    if len(sub) > 0 and sub[-1].direction != c1.bi_list[-1].direction:
+        sub = sub[:-1]
+    if len(right_bi) > 0 and right_bi[0] == c1.bi_list[-1].direction:
+        right_bi = right_bi[1:]
+
+    sub1: int = len(sub)
+    right_di: int = len(right_bi)
+    return sub1
+
+
+def get_sub_bi_right_num(c2, c1, c0) -> tuple:
+    """获取子区间（这是进行多级别联立分析的关键步骤）
+    """
+    start_dt_c2 = c2.bi_list[-1].sdt
+    end_dt_c2 = c2.bi_list[-1].edt
+    sub_c2 = []
+    right_bi_c2 = []
+    bis_c1 = c1.bi_list[-20:]
+    # right_kn_c1 = [x for x in c1.bi_list if start_dt_c2 <= x.fx_a.dt <= end_dt_c2]
+
+    for bi in bis_c1:
+        if bi.fx_b.dt > start_dt_c2 > bi.fx_a.dt:
+            sub_c2.append(bi)
+        elif start_dt_c2 <= bi.fx_a.dt < bi.fx_b.dt <= end_dt_c2:
+            sub_c2.append(bi)
+        elif bi.fx_a.dt < end_dt_c2 < bi.fx_b.dt:
+            sub_c2.append(bi)
+        elif end_dt_c2 <= bi.fx_a.dt < bi.fx_b.dt:
+            right_bi_c2.append(bi)
+        else:
+            continue
+
+    if len(sub_c2) > 0 and sub_c2[0].direction != c2.bi_list[-1].direction:
+        sub_c2 = sub_c2[1:]
+    if len(sub_c2) > 0 and sub_c2[-1].direction != c2.bi_list[-1].direction:
+        sub_c2 = sub_c2[:-1]
+    if len(right_bi_c2) > 0 and right_bi_c2[0] == c2.bi_list[-1].direction:
+        right_bi_c2 = right_bi_c2[1:]
+
+    # 笔终点前次级别笔数
+    sub_c2_1: int = len(sub_c2)
+    # 笔终点后次级别笔数
+    right_bi_c2_1: int = len(right_bi_c2)
+
+    start_dt = c1.bi_list[-1].sdt
+    end_dt = c1.bi_list[-1].edt
+    sub = []
+    right_bi = []
+    bis = c0.bi_list[-20:]
+    # right_kn = [x for x in c0.bi_list if start_dt <= x.fx_a.dt <= end_dt]
+    for bi in bis:
+        if bi.fx_b.dt > start_dt > bi.fx_a.dt:
+            sub.append(bi)
+        elif start_dt <= bi.fx_a.dt < bi.fx_b.dt <= end_dt:
+            sub.append(bi)
+        elif bi.fx_a.dt < end_dt < bi.fx_b.dt:
+            sub.append(bi)
+        elif end_dt <= bi.fx_a.dt < bi.fx_b.dt:
+            right_bi.append(bi)
+        else:
+            continue
+
+    if len(sub) > 0 and sub[0].direction != c1.bi_list[-1].direction:
+        sub = sub[1:]
+    if len(sub) > 0 and sub[-1].direction != c1.bi_list[-1].direction:
+        sub = sub[:-1]
+    if len(right_bi) > 0 and right_bi[0] == c1.bi_list[-1].direction:
+        right_bi = right_bi[1:]
+
+    # 大级别笔终点前次级别笔数
+    sub_1: int = len(sub)
+    # 大级别笔终点后次级别笔数
+    right_bi_1: int = len(right_bi)
+    return right_bi_c2_1, sub_c2_1, right_bi_1, sub_1
+
+
+def get_sub_span(bis: List[BI], start_dt: [datetime, str], end_dt: [datetime, str], direction: Direction) -> List[BI]:
+    """获取子区间（这是进行多级别联立分析的关键步骤）
+
+    :param bis: 笔的列表
+    :param start_dt: 子区间开始时间
+    :param end_dt: 子区间结束时间
+    :param direction: 方向
+    :return: 子区间
+    """
+    start_dt = pd.to_datetime(start_dt)
+    end_dt = pd.to_datetime(end_dt)
+    sub = []
+    for bi in bis:
+        if bi.fx_b.dt > start_dt > bi.fx_a.dt:
+            sub.append(bi)
+        elif start_dt <= bi.fx_a.dt < bi.fx_b.dt <= end_dt:
+            sub.append(bi)
+        elif bi.fx_a.dt < end_dt < bi.fx_b.dt:
+            sub.append(bi)
+        else:
+            continue
+
+    if len(sub) > 0 and sub[0].direction != direction:
+        sub = sub[1:]
+    if len(sub) > 0 and sub[-1].direction != direction:
+        sub = sub[:-1]
+    return sub
+
+
+def get_sub_bis(bis: List[BI], bi: BI) -> List[BI]:
+    """获取大级别笔对象对应的小级别笔走势
+
+    :param bis: 小级别笔列表
+    :param bi: 大级别笔对象8
+    :return:
+    """
+    sub_bis = get_sub_span(bis, start_dt=bi.fx_a.dt, end_dt=bi.fx_b.dt, direction=bi.direction)
+    if not sub_bis:
+        return []
+    return sub_bis
+
+
 class CZSC:
     def __init__(self,
                  bars: List[RawBar],
                  get_signals: Callable = None,
                  max_bi_num=envs.get_max_bi_num(),
+                 level: int = 1,
+                 macd_params=(8, 16, 4),
+                 ma_params=(4, 8, 16, 77, 177),
+                 atr_length=22,
                  ):
         """
 
@@ -187,6 +336,12 @@ class CZSC:
         self.bars_ubi: List[NewBar] = []  # 未完成笔的无包含K线序列
         self.bi_list: List[BI] = []
         self.symbol = bars[0].symbol
+        self.level = level
+        self.ma_params = ma_params
+        self.macd_params = macd_params
+        self.atr_length = atr_length
+        self.macd = []
+        self.ma = []
         self.freq = bars[0].freq
         self.get_signals = get_signals
         self.signals = None
@@ -219,7 +374,7 @@ class CZSC:
                     fx_a = fx
             bars_ubi = [x for x in bars_ubi if x.dt >= fx_a.elements[0].dt]
 
-            bi, bars_ubi_ = check_bi(bars_ubi)
+            bi, bars_ubi_ = check_bi(bars=bars_ubi, Macddata=self.macd)
             if isinstance(bi, BI):
                 self.bi_list.append(bi)
             self.bars_ubi = bars_ubi_
@@ -233,7 +388,7 @@ class CZSC:
         else:
             benchmark = None
 
-        bi, bars_ubi_ = check_bi(bars_ubi, benchmark)
+        bi, bars_ubi_ = check_bi(bars=bars_ubi, Macddata=self.macd)
         self.bars_ubi = bars_ubi_
         if isinstance(bi, BI):
             self.bi_list.append(bi)
@@ -283,6 +438,9 @@ class CZSC:
                     bars_ubi.append(k3)
         self.bars_ubi = bars_ubi
 
+        # 这里
+        self._update_ta()
+
         # 更新笔
         self.__update_bi()
 
@@ -302,6 +460,57 @@ class CZSC:
             self.signals = self.get_signals(c=self)
         else:
             self.signals = OrderedDict()
+
+    def _update_ta(self):
+        """更新辅助技术指标
+               """
+        level = self.level
+        if not self.ma:
+            ma_temp = dict()
+            close_ = np.array([x.close for x in self.bars_raw], dtype=np.double)
+            for p in self.ma_params:
+                ma_temp['ma%i' % p] = ta.SMA(close_, p)
+            for i in range(len(self.bars_raw)):
+                ma_ = {'ma%i' % p: ma_temp['ma%i' % p][i] for p in self.ma_params}
+                ma_.update({"dt": self.bars_raw[i].dt})
+                self.ma.append(ma_)
+        else:
+            ma_ = {'ma%i' % p: round(sum([x.close for x in self.bars_raw[-p:]]) / p, 1)
+                   for p in self.ma_params}
+            ma_.update({"dt": self.bars_raw[-1].dt})
+
+            if self.bars_raw[-2].dt == self.ma[-1]['dt']:
+                self.ma.append(ma_)
+            else:
+                self.ma[-1] = ma_
+
+        if not self.macd:
+            close_ = np.array([x.close for x in self.bars_raw], dtype=np.double)
+            high_ = np.array([x.high for x in self.bars_raw], dtype=np.double)
+            low_ = np.array([x.low for x in self.bars_raw], dtype=np.double)
+            dif, dea, macd = MACD(close=close_, fastperiod=self.macd_params[0] * level,
+                                  slowperiod=self.macd_params[1] * level,
+                                  signalperiod=self.macd_params[2] * level)
+            atr = ta.ATR(high=high_, low=low_, close=close_, timeperiod=self.atr_length)
+
+            for i in range(len(self.bars_raw)):
+                self.macd.append(
+                    Macd(dt=self.bars_raw[i].dt, dif=round(dif[i], 2), dea=round(dea[i], 2), macd=round(macd[i], 2),
+                         atr=round(atr[-1], 2)))
+        else:
+            close_ = np.array([x.close for x in self.bars_raw[-(self.macd_params[1] * level) - 2:]], dtype=np.double)
+            high_ = np.array([x.high for x in self.bars_raw[-(self.macd_params[1] * level) - 2:]], dtype=np.double)
+            low_ = np.array([x.low for x in self.bars_raw[-(self.macd_params[1] * level) - 2:]], dtype=np.double)
+            dif, dea, macd = MACD(close=close_, fastperiod=self.macd_params[0] * level,
+                                  slowperiod=self.macd_params[1] * level, signalperiod=self.macd_params[2] * level)
+            atr = ta.ATR(high=high_, low=low_, close=close_, timeperiod=self.atr_length)
+            macd_ = Macd(dt=self.bars_raw[-1].dt, dif=round(dif[-1], 2), dea=round(dea[-1], 2),
+                         macd=round(macd[-1], 2), atr=round(atr[-1], 2))
+
+            if self.bars_raw[-2].dt == self.macd[-1].dt:
+                self.macd.append(macd_)
+            else:
+                self.macd[-1] = macd_
 
     def to_echarts(self, width: str = "1400px", height: str = '580px', bs=None):
         """绘制K线分析图
