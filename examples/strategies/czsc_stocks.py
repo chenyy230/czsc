@@ -13,8 +13,6 @@ from czsc.signals.cyy import cyy_judge_struct_V230329
 from czsc.signals.bxt import get_s_five_bi_xt
 
 
-
-
 class CzscStocksV230329(CzscStrategyBase):
     """缠论买卖点"""
 
@@ -22,137 +20,64 @@ class CzscStocksV230329(CzscStrategyBase):
     def get_signals(cls, cat) -> OrderedDict:
         s = OrderedDict({"symbol": cat.symbol, "dt": cat.end_dt, "close": cat.latest_price})
 
-        # 基础信号，主要是约束作用
         s.update(cyy_judge_struct_V230329(cat, di=1, max_freq='60分钟', min_freq='15分钟'))
         s.update(get_s_five_bi_xt(cat.kas['15分钟'], di=1))
-
-
-        s.update(signals.bar_operate_span_V221111(cat.kas['15分钟'], k1='全天', span=('0935', '1450')))
-        s.update(signals.bar_operate_span_V221111(cat.kas['15分钟'], k1='上午', span=('0935', '1130')))
-        s.update(signals.bar_operate_span_V221111(cat.kas['15分钟'], k1='下午', span=('1300', '1450')))
-        s.update(signals.bar_zdt_V221110(cat.kas['15分钟'], di=1))
-
+        s.update(cyy_judge_struct_V230329(cat, di=1, max_freq='日线', min_freq='60分钟'))
+        s.update(get_s_five_bi_xt(cat.kas['60分钟'], di=1))
         return s
 
     @property
     def positions(self):
-        pos_list = [self.create_pos_f60_macd_best()]
-        signal_opts = ['15分钟_D1MACD_BS1A_一买_金叉_任意_0',
-                       '15分钟_D3MACD_BS1A_一买_金叉_任意_0',
-                       '15分钟_D5K33_MACD变色次数_0次_任意_任意_0',
-                       '15分钟_D5N3M10_MACD背驰_顶部_绿柱_任意_0',
-                       '15分钟_D5N3M34_MACD背驰_顶部_绿柱_任意_0',
-                       '15分钟_D5N3M50_MACD背驰_顶部_绿柱_任意_0',
-                       '15分钟_D5N5M34_MACD背驰_底部_红柱_任意_0',
-                       '15分钟_D5N5M50_MACD背驰_底部_红柱_任意_0',
-                       '15分钟_D5N7M50_MACD背驰_底部_红柱_任意_0',
-                       '15分钟_D5T30_RSI6V230227_超卖_向上_任意_0',
-
-                       "15分钟_D1B_BUY1_一买_19笔_任意_0",
-                       "15分钟_D1B_BUY1_一买_21笔_任意_0",
-                       "30分钟_D5B_BUY1_一买_19笔_任意_0",
-                       "30分钟_D5B_BUY1_一买_21笔_任意_0",
-
-                       '30分钟_D1MO3_结束辅助_新低_第2次_任意_0',
-                       '30分钟_D3B_BUY1_一买_21笔_任意_0',
-                       '30分钟_D5N7M10_MACD背驰_底部_绿柱_任意_0',
-                       '30分钟_D5T30_RSI6V230227_超卖_向下_任意_0',
-                       '30分钟_D7MACD_BS2_二卖_金叉_任意_0',
-                       '30分钟_D7T20_RSI9V230227_超卖_向下_任意_0',]
-
-
-        for signal1 in signal_opts:
-            pos_list.append(self.create_pos_f60_macd(signal1))
-        return pos_list
+        return [
+            self.create_pos_a(),
+        ]
 
     @property
     def freqs(self):
         return ['日线', '60分钟', '30分钟', '15分钟']
 
-    def create_pos_f60_macd(self, signal1):
-        """60分钟MACD金叉死叉优化"""
+    def create_pos_a(self, ):
         opens = [
-            {'name': '60分钟MACD金叉开多',
+            {'name': '开多',
              'operate': '开多',
-             'signals_all': ['全天_0935_1450_是_任意_任意_0',
-                             '60分钟_D1K_MACD_多头_任意_任意_0',
-                             '60分钟_D5K_MACD_空头_任意_任意_0',
-                             '日线_D2N1_累计超2千万_是_任意_任意_0'],
+             'signals_all': [],
              'signals_any': [],
-             'signals_not': ['15分钟_D1K_ZDT_涨停_任意_任意_0'],
+             'signals_not': [],
              'factors': [
-                 {'name': signal1,
-                  'signals_all': [signal1],
-                  'signals_any': [],
-                  'signals_not': []}
+                 {'name': '15分钟买点',
+                  'signals_not': [],
+                  'signals_all': [],
+                  'signals_any1': ['日线_60分钟_D1右侧笔数_2买卖点_任意_任意_0',
+                                   '日线_60分钟_D1右侧笔数_类2或3买卖点_任意_任意_0'],
+                  'signals_any2': ['60分钟_15分钟_D1右侧笔数_2买卖点_任意_任意_0',
+                                   '60分钟_15分钟_D1右侧笔数_类2或3买卖点_任意_任意_0',
+                                   ],
+                  'signals_any3': ['15分钟_倒1笔_五笔形态_二买_任意_任意_0',
+                                   '15分钟_倒1笔_五笔形态_类二买_任意_任意_0',
+                                   '15分钟_倒1笔_五笔形态_类二买1_任意_任意_0',
+                                   '15分钟_倒1笔_五笔形态_三买_任意_任意_0',
+                                   ],
+                  }
              ]},
         ]
-
-        exits = [
-            {'name': '平多',
-             'operate': '平多',
-             'signals_all': ['全天_0935_1450_是_任意_任意_0'],
-             'signals_any': [],
-             'signals_not': ['15分钟_D1K_ZDT_跌停_任意_任意_0'],
-             'factors': [
-                 {'name': '60分钟MACD死叉',
-                  'signals_all': ['60分钟_D1K_MACD_空头_任意_任意_0'],
-                  'signals_any': [],
-                  'signals_not': []}
-             ]},
-
-        ]
-        pos = Position(name=f"60分钟MACD金叉多头#{signal1}", symbol=self.symbol,
+        #
+        # exits = [
+        #     {'name': '平多',
+        #      'operate': '平多',
+        #      'signals_all': ['全天_0935_1450_是_任意_任意_0'],
+        #      'signals_any': [],
+        #      'signals_not': ['15分钟_D1K_ZDT_跌停_任意_任意_0'],
+        #      'factors': [
+        #          {'name': '60分钟MACD死叉',
+        #           'signals_all': ['60分钟_D1K_MACD_空头_任意_任意_0'],
+        #           'signals_any': [],
+        #           'signals_not': []}
+        #      ]},
+        #
+        # ]
+        pos = Position(name=f"15分钟多头", symbol=self.symbol,
                        opens=[Event.load(x) for x in opens],
-                       exits=[Event.load(x) for x in exits],
-                       interval=3600 * 4, timeout=16 * 30, stop_loss=500)
-        return pos
-
-    def create_pos_f60_macd_best(self):
-        """60分钟MACD金叉死叉优化"""
-        signal_opts = [
-            "15分钟_D1B_BUY1_一买_19笔_任意_0",
-            "15分钟_D1B_BUY1_一买_21笔_任意_0",
-            "30分钟_D5B_BUY1_一买_19笔_任意_0",
-            "30分钟_D5B_BUY1_一买_21笔_任意_0",
-        ]
-
-        opt_open_factors = []
-        for signal1 in signal_opts:
-            opt_open_factors.append({'name': signal1,
-                                     'signals_all': [signal1],
-                                     'signals_any': [],
-                                     'signals_not': []})
-
-        opens = [
-            {'name': '60分钟MACD金叉开多',
-             'operate': '开多',
-             'signals_all': ['全天_0935_1450_是_任意_任意_0',
-                             '60分钟_D1K_MACD_多头_任意_任意_0',
-                             '60分钟_D5K_MACD_空头_任意_任意_0',
-                             '日线_D2N1_累计超2千万_是_任意_任意_0'],
-             'signals_any': [],
-             'signals_not': ['15分钟_D1K_ZDT_涨停_任意_任意_0'],
-             'factors': opt_open_factors},
-        ]
-
-        exits = [
-            {'name': '平多',
-             'operate': '平多',
-             'signals_all': ['全天_0935_1450_是_任意_任意_0'],
-             'signals_any': [],
-             'signals_not': ['15分钟_D1K_ZDT_跌停_任意_任意_0'],
-             'factors': [
-                 {'name': '60分钟MACD死叉',
-                  'signals_all': ['60分钟_D1K_MACD_空头_任意_任意_0'],
-                  'signals_any': [],
-                  'signals_not': []}
-             ]},
-
-        ]
-        pos = Position(name="60分钟MACD金叉多头BEST", symbol=self.symbol,
-                       opens=[Event.load(x) for x in opens],
-                       exits=[Event.load(x) for x in exits],
+                       # exits=[Event.load(x) for x in exits],
                        interval=3600 * 4, timeout=16 * 30, stop_loss=500)
         return pos
 
@@ -310,5 +235,3 @@ class CzscStocksV230325(CzscStrategyBase):
                        exits=[Event.load(x) for x in exits],
                        interval=3600 * 4, timeout=16 * 30, stop_loss=500)
         return pos
-
-

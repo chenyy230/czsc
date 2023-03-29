@@ -392,3 +392,80 @@ class CzscStocksBeta(CzscStrategyBase):
                        exits=[Event.load(x) for x in exits],
                        interval=3600 * 4, timeout=16 * 40, stop_loss=500)
         return pos
+
+
+from collections import OrderedDict
+from czsc.objects import Event, Position
+from czsc.strategies import CzscStrategyBase
+from czsc import signals
+from czsc.signals.cyy import cyy_judge_struct_V230329
+from czsc.signals.bxt import get_s_five_bi_xt
+
+
+class CzscStocksV230329(CzscStrategyBase):
+    """缠论买卖点"""
+
+    @classmethod
+    def get_signals(cls, cat) -> OrderedDict:
+        s = OrderedDict({"symbol": cat.symbol, "dt": cat.end_dt, "close": cat.latest_price})
+        s.update(cyy_judge_struct_V230329(cat, di=1, max_freq='60分钟', min_freq='15分钟'))
+        s.update(get_s_five_bi_xt(cat.kas['15分钟'], di=1))
+        s.update(cyy_judge_struct_V230329(cat, di=1, max_freq='日线', min_freq='60分钟'))
+        s.update(get_s_five_bi_xt(cat.kas['60分钟'], di=1))
+
+        return s
+
+    @property
+    def positions(self):
+        return [
+            self.create_pos_a(),
+        ]
+
+    @property
+    def freqs(self):
+        return ['日线', '60分钟', '30分钟', '15分钟']
+
+    def create_pos_a(self, ):
+        opens = [
+            {'name': '开多',
+             'operate': '开多',
+             'signals_all': [],
+             'signals_any': [],
+             'signals_not': [],
+             'factors': [
+                 {'name': '15分钟买点',
+                  'signals_not': [],
+                  'signals_all': [],
+                  'signals_any1': ['日线_60分钟_D1右侧笔数_2买卖点_任意_任意_0',
+                                   '日线_60分钟_D1右侧笔数_类2或3买卖点_任意_任意_0'],
+                  'signals_any2': ['60分钟_15分钟_D1右侧笔数_2买卖点_任意_任意_0',
+                                   '60分钟_15分钟_D1右侧笔数_类2或3买卖点_任意_任意_0',
+                                   ],
+                  'signals_any3': ['15分钟_倒1笔_五笔形态_二买_任意_任意_0',
+                                   '15分钟_倒1笔_五笔形态_类二买_任意_任意_0',
+                                   '15分钟_倒1笔_五笔形态_类二买1_任意_任意_0',
+                                   '15分钟_倒1笔_五笔形态_三买_任意_任意_0',
+                                   ],
+                  }
+             ]},
+        ]
+        #
+        # exits = [
+        #     {'name': '平多',
+        #      'operate': '平多',
+        #      'signals_all': ['全天_0935_1450_是_任意_任意_0'],
+        #      'signals_any': [],
+        #      'signals_not': ['15分钟_D1K_ZDT_跌停_任意_任意_0'],
+        #      'factors': [
+        #          {'name': '60分钟MACD死叉',
+        #           'signals_all': ['60分钟_D1K_MACD_空头_任意_任意_0'],
+        #           'signals_any': [],
+        #           'signals_not': []}
+        #      ]},
+        #
+        # ]
+        pos = Position(name=f"15分钟多头", symbol=self.symbol,
+                       opens=[Event.load(x) for x in opens],
+                       # exits=[Event.load(x) for x in exits],
+                       interval=3600 * 4, timeout=16 * 30, stop_loss=500)
+        return pos

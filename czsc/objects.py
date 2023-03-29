@@ -454,6 +454,11 @@ class Factor:
 
     # signals_not 不能满足其中任一信号，允许为空
     signals_not: List[Signal] = None
+    signals_any1: List[Signal] = None
+    signals_any2: List[Signal] = None
+    signals_any3: List[Signal] = None
+    signals_any4: List[Signal] = None
+    signals_any5: List[Signal] = None
 
     def is_match(self, s: dict) -> bool:
         """判断 factor 是否满足"""
@@ -462,24 +467,69 @@ class Factor:
                 if signal.is_match(s):
                     return False
 
-        for signal in self.signals_all:
-            if not signal.is_match(s):
+        if self.signals_all:
+            for signal in self.signals_all:
+                if not signal.is_match(s):
+                    return False
+
+        if not self.signals_any1:
+            pass
+        elif self.signals_any1:
+            for signal in self.signals_any1:
+                if signal.is_match(s):
+                    break
+            else:
                 return False
 
-        if not self.signals_any:
-            return True
+        if not self.signals_any2:
+            pass
+        elif self.signals_any2:
+            for signal in self.signals_any2:
+                if signal.is_match(s):
+                    break
+            else:
+                return False
 
-        for signal in self.signals_any:
-            if signal.is_match(s):
-                return True
-        return False
+        if not self.signals_any3:
+            pass
+        elif self.signals_any3:
+            for signal in self.signals_any3:
+                if signal.is_match(s):
+                    break
+            else:
+                return False
+
+        if not self.signals_any4:
+            pass
+        elif self.signals_any4:
+            for signal in self.signals_any4:
+                if signal.is_match(s):
+                    break
+            else:
+                return False
+
+        if not self.signals_any5:
+            pass
+        elif self.signals_any5:
+            for signal in self.signals_any5:
+                if signal.is_match(s):
+                    break
+            else:
+                return False
+
+        return True
 
     def dump(self) -> dict:
         """将 Factor 对象转存为 dict"""
         raw = {
             "name": self.name,
             "signals_all": [x.signal for x in self.signals_all],
-            "signals_any": [] if not self.signals_any else [x.signal for x in self.signals_any],
+            "signals_any1": [] if not self.signals_any1 else [x.signal for x in self.signals_any1],
+            "signals_any2": [] if not self.signals_any2 else [x.signal for x in self.signals_any2],
+            "signals_any3": [] if not self.signals_any3 else [x.signal for x in self.signals_any3],
+            # "signals_any4": [] if not self.signals_any4 else [x.signal for x in self.signals_any4],
+            # "signals_any5": [] if not self.signals_any5 else [x.signal for x in self.signals_any5],
+
             "signals_not": [] if not self.signals_not else [x.signal for x in self.signals_not],
         }
         return raw
@@ -498,7 +548,11 @@ class Factor:
         """
         fa = Factor(name=raw['name'],
                     signals_all=[Signal(x) for x in raw['signals_all']],
-                    signals_any=[Signal(x) for x in raw['signals_any']] if raw['signals_any'] else None,
+                    signals_any1=[Signal(x) for x in raw['signals_any1']] if raw['signals_any1'] else None,
+                    signals_any2=[Signal(x) for x in raw['signals_any2']] if raw['signals_any2'] else None,
+                    signals_any3=[Signal(x) for x in raw['signals_any3']] if raw['signals_any3'] else None,
+                    # signals_any4=[Signal(x) for x in raw['signals_any4']] if raw['signals_any4'] else None,
+                    # signals_any5=[Signal(x) for x in raw['signals_any5']] if raw['signals_any5'] else None,
                     signals_not=[Signal(x) for x in raw['signals_not']] if raw['signals_not'] else None
                     )
         return fa

@@ -15,6 +15,7 @@ from czsc.data.ts_cache import TsDataCache
 from czsc.traders.base import CzscTrader, check_signals_acc
 from czsc import signals
 from czsc.signals.cyy import cyy_judge_struct_V230329
+from czsc.signals.bxt import get_s_five_bi_xt
 
 os.environ['czsc_verbose'] = '1'
 
@@ -30,6 +31,7 @@ def get_signals(cat: CzscTrader) -> OrderedDict:
     s = OrderedDict({"symbol": cat.symbol, "dt": cat.end_dt, "close": cat.latest_price})
     # 定义需要检查的信号
     s.update(cyy_judge_struct_V230329(cat, di=1, max_freq='60分钟', min_freq='15分钟'))
+    # s.update(get_s_five_bi_xt(cat.kas['15分钟'], di=1))
     return s
 
 
