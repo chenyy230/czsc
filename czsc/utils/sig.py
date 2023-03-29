@@ -10,7 +10,8 @@ from collections import Counter, OrderedDict
 from typing import List, Any, Dict, Union, Tuple
 from czsc.enum import Direction
 from czsc.objects import BI, RawBar, ZS, Signal
-
+from datetime import datetime
+from czsc.analyze import CZSC
 
 def create_single_signal(**kwargs) -> OrderedDict:
     """创建单个信号"""
@@ -322,3 +323,162 @@ def get_zs_seq(bis: List[BI]) -> List[ZS]:
                 zs.bis.append(bi)
                 zs_list[-1] = zs
     return zs_list
+
+
+def get_sub_bi(c1, c0) -> int:
+    """获取子区间（这是进行多级别联立分析的关键步骤）
+    """
+    start_dt = c1.bi_list[-1].sdt
+    end_dt = c1.bi_list[-1].edt
+    sub = []
+    right_bi = []
+    bis = c0.bi_list[-20:]
+    # right_kn = [x for x in c0.bi_list if start_dt <= x.fx_a.dt <= end_dt]
+    for bi in bis:
+        if bi.fx_b.dt > start_dt > bi.fx_a.dt:
+            sub.append(bi)
+        elif start_dt <= bi.fx_a.dt < bi.fx_b.dt <= end_dt:
+            sub.append(bi)
+        elif bi.fx_a.dt < end_dt < bi.fx_b.dt:
+            sub.append(bi)
+        elif end_dt <= bi.fx_a.dt < bi.fx_b.dt:
+            right_bi.append(bi)
+        else:
+            continue
+
+    if len(sub) > 0 and sub[0].direction != c1.bi_list[-1].direction:
+        sub = sub[1:]
+    if len(sub) > 0 and sub[-1].direction != c1.bi_list[-1].direction:
+        sub = sub[:-1]
+    if len(right_bi) > 0 and right_bi[0] == c1.bi_list[-1].direction:
+        right_bi = right_bi[1:]
+
+    sub1: int = len(sub)
+    right_di: int = len(right_bi)
+    return sub1
+
+def get_right_bi_num(c1:CZSC,c0:CZSC):
+    """获取子区间（这是进行多级别联立分析的关键步骤）
+    """
+
+    end_dt = c1.bi_list[-1].edt
+    right_bi = []
+    bis = c0.bi_list[-20:]
+    for bi in bis:
+        if end_dt <= bi.fx_a.dt < bi.fx_b.dt:
+            right_bi.append(bi)
+        else:
+            continue
+    if len(right_bi) > 0 and right_bi[0] == c1.bi_list[-1].direction:
+        right_bi = right_bi[1:]
+
+    # 大级别笔终点后次级别笔数
+    right_bi_num: int = len(right_bi)
+    return right_bi_num
+
+def get_sub_bi_right_num(c2, c1, c0) -> tuple:
+    """获取子区间（这是进行多级别联立分析的关键步骤）
+    """
+    start_dt_c2 = c2.bi_list[-1].sdt
+    end_dt_c2 = c2.bi_list[-1].edt
+    sub_c2 = []
+    right_bi_c2 = []
+    bis_c1 = c1.bi_list[-20:]
+    # right_kn_c1 = [x for x in c1.bi_list if start_dt_c2 <= x.fx_a.dt <= end_dt_c2]
+
+    for bi in bis_c1:
+        if bi.fx_b.dt > start_dt_c2 > bi.fx_a.dt:
+            sub_c2.append(bi)
+        elif start_dt_c2 <= bi.fx_a.dt < bi.fx_b.dt <= end_dt_c2:
+            sub_c2.append(bi)
+        elif bi.fx_a.dt < end_dt_c2 < bi.fx_b.dt:
+            sub_c2.append(bi)
+        elif end_dt_c2 <= bi.fx_a.dt < bi.fx_b.dt:
+            right_bi_c2.append(bi)
+        else:
+            continue
+
+    if len(sub_c2) > 0 and sub_c2[0].direction != c2.bi_list[-1].direction:
+        sub_c2 = sub_c2[1:]
+    if len(sub_c2) > 0 and sub_c2[-1].direction != c2.bi_list[-1].direction:
+        sub_c2 = sub_c2[:-1]
+    if len(right_bi_c2) > 0 and right_bi_c2[0] == c2.bi_list[-1].direction:
+        right_bi_c2 = right_bi_c2[1:]
+
+    # 笔终点前次级别笔数
+    sub_c2_1: int = len(sub_c2)
+    # 笔终点后次级别笔数
+    right_bi_c2_1: int = len(right_bi_c2)
+
+    start_dt = c1.bi_list[-1].sdt
+    end_dt = c1.bi_list[-1].edt
+    sub = []
+    right_bi = []
+    bis = c0.bi_list[-20:]
+    # right_kn = [x for x in c0.bi_list if start_dt <= x.fx_a.dt <= end_dt]
+    for bi in bis:
+        if bi.fx_b.dt > start_dt > bi.fx_a.dt:
+            sub.append(bi)
+        elif start_dt <= bi.fx_a.dt < bi.fx_b.dt <= end_dt:
+            sub.append(bi)
+        elif bi.fx_a.dt < end_dt < bi.fx_b.dt:
+            sub.append(bi)
+        elif end_dt <= bi.fx_a.dt < bi.fx_b.dt:
+            right_bi.append(bi)
+        else:
+            continue
+
+    if len(sub) > 0 and sub[0].direction != c1.bi_list[-1].direction:
+        sub = sub[1:]
+    if len(sub) > 0 and sub[-1].direction != c1.bi_list[-1].direction:
+        sub = sub[:-1]
+    if len(right_bi) > 0 and right_bi[0] == c1.bi_list[-1].direction:
+        right_bi = right_bi[1:]
+
+    # 大级别笔终点前次级别笔数
+    sub_1: int = len(sub)
+    # 大级别笔终点后次级别笔数
+    right_bi_1: int = len(right_bi)
+    return right_bi_c2_1, sub_c2_1, right_bi_1, sub_1
+
+
+def get_sub_span(bis: List[BI], start_dt: [datetime, str], end_dt: [datetime, str], direction: Direction) -> List[BI]:
+    """获取子区间（这是进行多级别联立分析的关键步骤）
+
+    :param bis: 笔的列表
+    :param start_dt: 子区间开始时间
+    :param end_dt: 子区间结束时间
+    :param direction: 方向
+    :return: 子区间
+    """
+    start_dt = pd.to_datetime(start_dt)
+    end_dt = pd.to_datetime(end_dt)
+    sub = []
+    for bi in bis:
+        if bi.fx_b.dt > start_dt > bi.fx_a.dt:
+            sub.append(bi)
+        elif start_dt <= bi.fx_a.dt < bi.fx_b.dt <= end_dt:
+            sub.append(bi)
+        elif bi.fx_a.dt < end_dt < bi.fx_b.dt:
+            sub.append(bi)
+        else:
+            continue
+
+    if len(sub) > 0 and sub[0].direction != direction:
+        sub = sub[1:]
+    if len(sub) > 0 and sub[-1].direction != direction:
+        sub = sub[:-1]
+    return sub
+
+
+def get_sub_bis(bis: List[BI], bi: BI) -> List[BI]:
+    """获取大级别笔对象对应的小级别笔走势
+
+    :param bis: 小级别笔列表
+    :param bi: 大级别笔对象8
+    :return:
+    """
+    sub_bis = get_sub_span(bis, start_dt=bi.fx_a.dt, end_dt=bi.fx_b.dt, direction=bi.direction)
+    if not sub_bis:
+        return []
+    return sub_bis

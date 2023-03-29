@@ -7,13 +7,14 @@ describe: 验证信号计算的准确性，仅适用于缠论笔相关的信号�
           技术指标构建的信号，用这个工具检查不是那么方便
 """
 import sys
+from datetime import datetime
 sys.path.insert(0, '..')
 import os
 from collections import OrderedDict
 from czsc.data.ts_cache import TsDataCache
 from czsc.traders.base import CzscTrader, check_signals_acc
 from czsc import signals
-
+from czsc.signals.cyy import cyy_judge_struct_V230329
 
 os.environ['czsc_verbose'] = '1'
 
@@ -28,7 +29,7 @@ bars = dc.pro_bar_minutes(ts_code=symbol, asset='E', freq='15min',
 def get_signals(cat: CzscTrader) -> OrderedDict:
     s = OrderedDict({"symbol": cat.symbol, "dt": cat.end_dt, "close": cat.latest_price})
     # 定义需要检查的信号
-    s.update(signals.tas_ma_base_V230313(cat.kas['日线'], di=1))
+    s.update(cyy_judge_struct_V230329(cat, di=1, max_freq='60分钟', min_freq='15分钟'))
     return s
 
 
@@ -37,9 +38,3 @@ if __name__ == '__main__':
 
     # 也可以指定信号的K线周期，比如只检查日线信号
     # check_signals_acc(bars, get_signals, freqs=['日线'])
-
-
-
-
-
-
