@@ -281,7 +281,7 @@ def kline_pro(kline: List[dict],
     chart_ma = Line()
     chart_ma.add_xaxis(xaxis_data=dts)
     if not t_seq:
-        t_seq = [5, 13, 21, 34, 55, 89, 144, 233]
+        t_seq = [4, 8, 16, 32, 64, 128, 256]
 
     ma_keys = dict()
     for t in t_seq:
